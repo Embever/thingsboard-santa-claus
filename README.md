@@ -1,1 +1,1 @@
-# thingsboard-santa-clause
+# thingsboard-santa-claus
