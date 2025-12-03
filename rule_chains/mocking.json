@@ -1,0 +1,146 @@
+{
+  "ruleChain": {
+    "additionalInfo": {
+      "description": ""
+    },
+    "name": "Mocking",
+    "type": "CORE",
+    "firstRuleNodeId": null,
+    "root": false,
+    "debugMode": false,
+    "configuration": null,
+    "externalId": null
+  },
+  "metadata": {
+    "firstNodeIndex": null,
+    "nodes": [
+      {
+        "additionalInfo": {
+          "description": "",
+          "layoutX": 380,
+          "layoutY": 573
+        },
+        "type": "org.thingsboard.rule.engine.transform.TbTransformMsgNode",
+        "name": "Sample data",
+        "debugMode": true,
+        "singletonMode": false,
+        "configurationVersion": 0,
+        "configuration": {
+          "scriptLang": "JS",
+          "jsScript": "// Generate sample data\nvar childDevices = [\n  'Blitzen',\n  'Donner',\n  'Cupid',\n  'Comet',\n  'Vixen',\n  'Prancer',\n  'Dasher',\n  'Rudolph',\n  'Sleigh-Gateway'\n];\n\nvar messages = [];\n\nfor (var i = 0; i < childDevices.length; i++) {\n\n    // Body temperature (°C): 37.0–38\n    var bodyTemp = 36 + (Math.random() * 1);\n\n    // Signal strength (dBm): -110 to -60\n    var signalStrength = -123 + (Math.random() * 50);\n\n    // Battery level (%): 20–100\n    var batteryLevel = 20 + (Math.random() * 80);\n\n    // Stress level (%): 0–100\n    var stressLevel = 75 + Math.random() * 10;\n\n    // Heart rate (bpm): 40–120\n    var heartRate = 140 + (Math.random() * 5);\n\n    messages.push({\n        body_temperature: Math.round(bodyTemp * 10) / 10,\n        signal_strength: Math.round(signalStrength),      // integer dBm\n        battery_level: Math.round(batteryLevel),          // integer %\n        stress_level: Math.round(stressLevel),           // 0–100 %\n        heart_rate: Math.round(heartRate),               // bpm\n        deviceId: childDevices[i]\n    });\n}\n\n// The Split node will iterate over the array and forward each message\nreturn {msg: messages, metadata: metadata, msgType: msgType};\n",
+          "tbelScript": "// Generate sample data\nvar temperature = 20 + (Math.random() * 10);\nvar humidity = 30 + (Math.random() * 40);\n\n// Your 8 child device NAMES (from Devices list)\nvar childDevices = [\n    '474abb80-ce9e-11f0-b4dc-af821406f053', '404a6f60-ce9e-11f0-b4dc-af821406f053', 'device3'\n];\n\n// Add device index to metadata for Split routing\nmetadata.deviceIndex = Math.floor(Math.random() * childDevices.length);\nmsg = {\n    temperature: Math.round(temperature * 100) / 100,\n    humidity: Math.round(humidity * 100) / 100,\n    timestamp: new Date().getTime()\n};\n\nreturn {msg: msg, metadata: metadata, msgType: msgType};\n"
+        },
+        "externalId": null
+      },
+      {
+        "additionalInfo": {
+          "description": "",
+          "layoutX": 88,
+          "layoutY": 578
+        },
+        "type": "org.thingsboard.rule.engine.debug.TbMsgGeneratorNode",
+        "name": "Reindeers",
+        "debugMode": true,
+        "singletonMode": false,
+        "configurationVersion": 0,
+        "configuration": {
+          "msgCount": 0,
+          "periodInSeconds": 10,
+          "scriptLang": "TBEL",
+          "jsScript": "var msg = { temp: 42, humidity: 77 };\nvar metadata = { data: 40 };\nvar msgType = \"POST_TELEMETRY_REQUEST\";\n\nreturn { msg: msg, metadata: metadata, msgType: msgType };",
+          "tbelScript": "var msg = { temp: 42, humidity: 77 };\nvar metadata = { data: 40 };\nvar msgType = \"POST_TELEMETRY_REQUEST\";\n\nreturn { msg: msg, metadata: metadata, msgType: msgType };",
+          "queueName": null,
+          "originatorId": "fccca200-c919-11f0-856b-d14e1116e6d8",
+          "originatorType": "DEVICE"
+        },
+        "externalId": null
+      },
+      {
+        "additionalInfo": {
+          "description": "",
+          "layoutX": 628,
+          "layoutY": 577
+        },
+        "type": "org.thingsboard.rule.engine.transform.TbSplitArrayMsgNode",
+        "name": "Splitting",
+        "debugMode": true,
+        "singletonMode": false,
+        "configurationVersion": 0,
+        "configuration": {
+          "version": 0
+        },
+        "externalId": null
+      },
+      {
+        "additionalInfo": {
+          "description": "",
+          "layoutX": 903,
+          "layoutY": 579
+        },
+        "type": "org.thingsboard.rule.engine.telemetry.TbMsgTimeseriesNode",
+        "name": "Save",
+        "debugMode": true,
+        "singletonMode": false,
+        "configurationVersion": 0,
+        "configuration": {
+          "defaultTTL": 0,
+          "skipLatestPersistence": false,
+          "useServerTs": true
+        },
+        "externalId": null
+      },
+      {
+        "additionalInfo": {
+          "description": "",
+          "layoutX": 675,
+          "layoutY": 683
+        },
+        "type": "org.thingsboard.rule.engine.transform.TbChangeOriginatorNode",
+        "name": "change",
+        "debugMode": true,
+        "singletonMode": false,
+        "configurationVersion": 0,
+        "configuration": {
+          "originatorSource": "ENTITY",
+          "entityType": "DEVICE",
+          "entityNamePattern": "$[deviceId]",
+          "relationsQuery": {
+            "direction": "FROM",
+            "maxLevel": 1,
+            "filters": [
+              {
+                "relationType": "Contains",
+                "entityTypes": []
+              }
+            ],
+            "fetchLastLevelOnly": false
+          }
+        },
+        "externalId": null
+      }
+    ],
+    "connections": [
+      {
+        "fromIndex": 0,
+        "toIndex": 2,
+        "type": "Success"
+      },
+      {
+        "fromIndex": 1,
+        "toIndex": 0,
+        "type": "Success"
+      },
+      {
+        "fromIndex": 2,
+        "toIndex": 4,
+        "type": "Success"
+      },
+      {
+        "fromIndex": 4,
+        "toIndex": 3,
+        "type": "Success"
+      }
+    ],
+    "ruleChainConnections": null
+  }
+}
