@@ -22,12 +22,12 @@
         },
         "type": "org.thingsboard.rule.engine.transform.TbTransformMsgNode",
         "name": "Sample data",
-        "debugMode": true,
+        "debugMode": false,
         "singletonMode": false,
         "configurationVersion": 0,
         "configuration": {
           "scriptLang": "JS",
-          "jsScript": "// Generate sample data\nvar childDevices = [\n  'Blitzen',\n  'Donner',\n  'Cupid',\n  'Comet',\n  'Vixen',\n  'Prancer',\n  'Dasher',\n  'Rudolph',\n  'Sleigh-Gateway'\n];\n\nvar messages = [];\n\nfor (var i = 0; i < childDevices.length; i++) {\n\n    // Body temperature (°C): 37.0–38\n    var bodyTemp = 36 + (Math.random() * 1);\n\n    // Signal strength (dBm): -110 to -60\n    var signalStrength = -123 + (Math.random() * 50);\n\n    // Battery level (%): 20–100\n    var batteryLevel = 20 + (Math.random() * 80);\n\n    // Stress level (%): 0–100\n    var stressLevel = 75 + Math.random() * 10;\n\n    // Heart rate (bpm): 40–120\n    var heartRate = 140 + (Math.random() * 5);\n\n    messages.push({\n        body_temperature: Math.round(bodyTemp * 10) / 10,\n        signal_strength: Math.round(signalStrength),      // integer dBm\n        battery_level: Math.round(batteryLevel),          // integer %\n        stress_level: Math.round(stressLevel),           // 0–100 %\n        heart_rate: Math.round(heartRate),               // bpm\n        deviceId: childDevices[i]\n    });\n}\n\n// The Split node will iterate over the array and forward each message\nreturn {msg: messages, metadata: metadata, msgType: msgType};\n",
+          "jsScript": "// Generate sample data\nfunction lerp(a, b, t) {\n  return a + (b - a) * t;\n}\n\nfunction pointAlongRoute(route, t) {\n  // Compute segment lengths\n  var segLens = [];\n  var total = 0;\n  for (var i = 0; i < route.length - 1; i++) {\n    var dx = route[i+1].lat - route[i].lat;\n    var dy = route[i+1].lon - route[i].lon;\n    var d = Math.sqrt(dx*dx + dy*dy);\n    segLens.push(d);\n    total += d;\n  }\n  if (total === 0) return route[0];\n\n  var target = t * total;\n  var acc = 0;\n  for (var j = 0; j < segLens.length; j++) {\n    if (acc + segLens[j] >= target) {\n      var localT = (target - acc) / segLens[j];\n      return {\n        lat: lerp(route[j].lat, route[j+1].lat, localT),\n        lon: lerp(route[j].lon, route[j+1].lon, localT)\n      };\n    }\n    acc += segLens[j];\n  }\n  return route[route.length - 1];\n}\n\n// Generate sample data\nvar route = [\n  // Start / home\n  { lat: 89.9,  lon: 0.0 },        // North Pole\n  { lat: 66.5,  lon: 25.7 },       // Rovaniemi (Lapland)\n\n  // Europe\n  { lat: 59.9,  lon: 10.7 },       // Oslo\n  { lat: 55.7,  lon: 12.6 },       // Copenhagen\n  { lat: 52.5,  lon: 13.4 },       // Berlin\n  { lat: 50.1,  lon: 8.7 },        // Frankfurt\n  { lat: 48.9,  lon: 2.35 },       // Paris\n  { lat: 51.5,  lon: -0.1 },       // London\n  { lat: 41.9,  lon: 12.5 },       // Rome\n  { lat: 40.4,  lon: -3.7 },       // Madrid\n\n  // North America (East → West)\n  { lat: 45.5,  lon: -73.6 },      // Montreal\n  { lat: 40.7,  lon: -74.0 },      // New York\n  { lat: 41.9,  lon: -87.6 },      // Chicago\n  { lat: 29.8,  lon: -95.4 },      // Houston\n  { lat: 34.0,  lon: -118.2 },     // Los Angeles\n  { lat: 49.3,  lon: -123.1 },     // Vancouver\n  { lat: 61.2,  lon: -149.9 },     // Anchorage\n\n  // Pacific / Oceania\n  { lat: 21.3,  lon: -157.8 },     // Honolulu\n  { lat: -36.8, lon: 174.8 },      // Auckland\n  { lat: -33.9, lon: 151.2 },      // Sydney\n  { lat: -37.8, lon: 144.9 },      // Melbourne\n\n  // Asia–Pacific\n  { lat: 1.35,  lon: 103.8 },      // Singapore\n  { lat: 13.7,  lon: 100.5 },      // Bangkok\n  { lat: 3.14,  lon: 101.69 },     // Kuala Lumpur\n  { lat: 14.6,  lon: 121.0 },      // Manila\n  { lat: 22.3,  lon: 114.2 },      // Hong Kong\n  { lat: 35.7,  lon: 139.7 },      // Tokyo\n  { lat: 37.6,  lon: 126.9 },      // Seoul\n  { lat: 39.9,  lon: 116.4 },      // Beijing\n  { lat: 31.2,  lon: 121.5 },      // Shanghai\n\n  // South & Central Asia\n  { lat: 28.6,  lon: 77.2 },       // Delhi\n  { lat: 19.1,  lon: 72.9 },       // Mumbai\n  { lat: 24.9,  lon: 67.1 },       // Karachi\n  { lat: 33.9,  lon: 35.5 },       // Beirut\n  { lat: 25.2,  lon: 55.3 },       // Dubai\n\n  // Africa\n  { lat: 30.0,  lon: 31.2 },       // Cairo\n  { lat: 6.5,   lon: 3.4 },        // Lagos\n  { lat: -1.3,  lon: 36.8 },       // Nairobi\n  { lat: -26.2, lon: 28.0 },       // Johannesburg\n  { lat: -33.9, lon: 18.4 },       // Cape Town\n\n  // South America\n  { lat: -23.5, lon: -46.6 },      // São Paulo\n  { lat: -22.9, lon: -43.2 },      // Rio de Janeiro\n  { lat: -34.6, lon: -58.4 },      // Buenos Aires\n  { lat: -33.4, lon: -70.7 },      // Santiago\n  { lat: -12.0, lon: -77.0 },      // Lima\n  { lat: 4.7,   lon: -74.1 },      // Bogotá\n\n  // Back through North America / Atlantic\n  { lat: 25.8,  lon: -80.3 },      // Miami\n  { lat: 39.0,  lon: -77.0 },      // Washington D.C.\n  { lat: 51.5,  lon: -0.1 },       // London (again)\n  { lat: 60.2,  lon: 24.9 },       // Helsinki\n  { lat: 64.1,  lon: -21.9 },      // Reykjavik\n\n  // Return to the Pole\n  { lat: 80.0,  lon: 0.0 },        // High Arctic leg\n  { lat: 89.9,  lon: 0.0 }         // North Pole (finish)\n];\n\n\nvar now = new Date();\nvar minutesOfDay = now.getHours() * 60 + now.getMinutes();\nvar t = minutesOfDay / 1439.0;   // 0 at first minute, 1 at last\n\nvar p = pointAlongRoute(route, t);\n\n\nvar childDevices = [\n  'Blitzen',\n  'Donner',\n  'Cupid',\n  'Comet',\n  'Vixen',\n  'Prancer',\n  'Dasher',\n  'Rudolph',\n  'Sleigh-Gateway'\n];\n\nvar messages = [];\n\nfor (var i = 0; i < childDevices.length; i++) {\n\n    // Body temperature (°C): 37.0–38\n    var bodyTemp = 36 + (Math.random() * 1);\n\n    // Signal strength (dBm): -110 to -60\n    var signalStrength = -123 + (Math.random() * 50);\n\n    // Battery level (%): 20–100\n    var batteryLevel = 20 + (Math.random() * 80);\n\n    // Stress level (%): 0–100\n    var stressLevel = 75 + Math.random() * 10;\n\n    // Heart rate (bpm): 40–120\n    var heartRate = 140 + (Math.random() * 5);\n\n    messages.push({\n        body_temperature: Math.round(bodyTemp * 10) / 10,\n        signal_strength: Math.round(signalStrength),      // integer dBm\n        battery_level: Math.round(batteryLevel),          // integer %\n        stress_level: Math.round(stressLevel),           // 0–100 %\n        heart_rate: Math.round(heartRate),               // bpm\n        deviceId: childDevices[i],\n        lat:p.lat,\n        lon:p.lon\n    });\n}\n\n// The Split node will iterate over the array and forward each message\nreturn {msg: messages, metadata: metadata, msgType: msgType};\n",
           "tbelScript": "// Generate sample data\nvar temperature = 20 + (Math.random() * 10);\nvar humidity = 30 + (Math.random() * 40);\n\n// Your 8 child device NAMES (from Devices list)\nvar childDevices = [\n    '474abb80-ce9e-11f0-b4dc-af821406f053', '404a6f60-ce9e-11f0-b4dc-af821406f053', 'device3'\n];\n\n// Add device index to metadata for Split routing\nmetadata.deviceIndex = Math.floor(Math.random() * childDevices.length);\nmsg = {\n    temperature: Math.round(temperature * 100) / 100,\n    humidity: Math.round(humidity * 100) / 100,\n    timestamp: new Date().getTime()\n};\n\nreturn {msg: msg, metadata: metadata, msgType: msgType};\n"
         },
         "externalId": null
@@ -40,12 +40,12 @@
         },
         "type": "org.thingsboard.rule.engine.debug.TbMsgGeneratorNode",
         "name": "Reindeers",
-        "debugMode": true,
+        "debugMode": false,
         "singletonMode": false,
         "configurationVersion": 0,
         "configuration": {
           "msgCount": 0,
-          "periodInSeconds": 10,
+          "periodInSeconds": 60,
           "scriptLang": "TBEL",
           "jsScript": "var msg = { temp: 42, humidity: 77 };\nvar metadata = { data: 40 };\nvar msgType = \"POST_TELEMETRY_REQUEST\";\n\nreturn { msg: msg, metadata: metadata, msgType: msgType };",
           "tbelScript": "var msg = { temp: 42, humidity: 77 };\nvar metadata = { data: 40 };\nvar msgType = \"POST_TELEMETRY_REQUEST\";\n\nreturn { msg: msg, metadata: metadata, msgType: msgType };",
@@ -63,7 +63,7 @@
         },
         "type": "org.thingsboard.rule.engine.transform.TbSplitArrayMsgNode",
         "name": "Splitting",
-        "debugMode": true,
+        "debugMode": false,
         "singletonMode": false,
         "configurationVersion": 0,
         "configuration": {
@@ -79,7 +79,7 @@
         },
         "type": "org.thingsboard.rule.engine.telemetry.TbMsgTimeseriesNode",
         "name": "Save",
-        "debugMode": true,
+        "debugMode": false,
         "singletonMode": false,
         "configurationVersion": 0,
         "configuration": {
@@ -97,7 +97,7 @@
         },
         "type": "org.thingsboard.rule.engine.transform.TbChangeOriginatorNode",
         "name": "change",
-        "debugMode": true,
+        "debugMode": false,
         "singletonMode": false,
         "configurationVersion": 0,
         "configuration": {
